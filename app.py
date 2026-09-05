@@ -148,7 +148,9 @@ def facial_expression(): return render_template('facial_expression.html', **cont
 @login_required
 def analyze_face():
     image=request.files.get('image'); result,error=face_emotion.analyze(image)
-    if error:return jsonify({'ok':False,'error':error}),400
+    if error:
+        code='NO_FACE' if error.startswith('No face detected') else 'ANALYSIS_ERROR'
+        return jsonify({'ok':False,'code':code,'error':error}),400
     return jsonify({'ok':True,'expression':result['expression'],'confidence':result['confidence'],'message':face_emotion.supportive(result['expression'])})
 
 @app.route('/ai-companion', methods=['GET','POST'])

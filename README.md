@@ -9,18 +9,31 @@ MindPulse AI provides an educational wellbeing risk estimate from self-reported 
 ## Features
 
 - Premium responsive landing page
+
 - Registration, login, logout, PBKDF2 password hashing, and Flask sessions
+
 - Gmail SMTP OTP password recovery
+
 - Multi-step assessment with progress indicator
+
 - Low, Moderate, and High Risk educational estimates
+
 - Prediction probabilities, key factor analysis, and recommendations
+
 - What-if simulator
+
 - User-isolated prediction history and trend view
+
 - Analytics and ML concepts/viva page
+
 - Browser camera permission flow and OpenCV expression analysis
+
 - Supportive expression messages
+
 - Gemini AI Wellbeing Companion with crisis-aware safety wording
+
 - Local-storage light/dark theme persistence
+
 - Responsive desktop, tablet, and mobile layouts
 
 ## Safety disclaimer
@@ -31,7 +44,7 @@ Facial analysis describes visible expression only. It does not detect mental ill
 
 ## Architecture
 
-```text
+```
 Browser HTML/CSS/JavaScript
           ↓
       Flask routes
@@ -68,7 +81,7 @@ The existing dataset is `data/wellbeing_dataset.csv` and the saved model is `mod
 
 Create a `.env` locally if you use a dotenv loader or export variables in your shell. Never commit it.
 
-```text
+```
 SECRET_KEY=replace-with-a-long-random-value
 GEMINI_API_KEY=your-gemini-key
 SMTP_HOST=smtp.gmail.com
@@ -84,25 +97,32 @@ The Flask app reads environment variables directly. Gmail requires a Google App 
 ## Render deployment
 
 1. Push the project to GitHub.
-2. Create an account at [Render](https://render.com/).
-3. Select **New → Web Service**.
-4. Connect the GitHub repository.
-5. Select the Python environment.
-6. Use this build command:
+
+1. Create an account at [Render](https://render.com/).
+
+1. Select **New → Web Service**.
+
+1. Connect the GitHub repository.
+
+1. Select the Python environment.
+
+1. Use this build command:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-7. Use this start command:
+1. Use this start command:
 
 ```bash
 gunicorn app:app
 ```
 
-8. Add `SECRET_KEY`, `GEMINI_API_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_APP_PASSWORD`, and `SMTP_FROM_EMAIL` under Render environment variables.
-9. Deploy the service.
-10. Open the public Render URL.
+1. Add `SECRET_KEY`, `GEMINI_API_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_APP_PASSWORD`, and `SMTP_FROM_EMAIL` under Render environment variables.
+
+1. Deploy the service.
+
+1. Open the public Render URL.
 
 ### Render SQLite limitation
 
@@ -125,3 +145,64 @@ Possible future work includes a managed database, a validated consented wellbein
 The authenticated product sidebar now exposes the complete extended feature set: downloadable personal HTML reports, Explainable AI, profile and settings, private journaling, daily mood check-ins, habit tracking, guided breathing, personalized weekly goals, protected admin analytics, and dataset-range outlier warnings. All personal records use `user_id` isolation in SQLite. Admin analytics requires the signed-in email to match the `ADMIN_EMAIL` environment variable.
 
 The report download is intentionally HTML so it remains dependency-light and printable from any browser. Use the browser’s Print command to save it as PDF.
+
+## Gemini integration note
+
+The companion uses the current `google-genai` SDK with a fresh client for each request, explicit client cleanup, no tools, and automatic function calling disabled. The dependency is pinned below major version 3 (`google-genai>=0.3,<3`) to avoid the documented AFC behavior change. If `GEMINI_API_KEY` is absent or the provider is temporarily unavailable, the application returns a safe fallback message instead of crashing.
+
+## Facial Expression Analysis
+
+The Facial Expression Analysis page uses the browser camera only after the user clicks **Enable camera** and grants permission. The browser captures a frame every 1.5 seconds and sends it to the authenticated Flask endpoint `/api/analyze-face`. The backend uses the existing OpenCV Haar cascade implementation in `face_emotion.py` to detect a visible face and return one of six educational expression labels: **Happy, Neutral, Sad, Angry, Surprised, or Fearful**, together with a confidence value and supportive message.
+
+The feature describes visible facial expression only. It is **not a mental-health diagnosis**, and expressions such as Sad are not converted into wellbeing risk. If no face is visible, the interface shows **No face detected**. On Render, use the HTTPS deployment URL because browsers require a secure context for camera access.
+
+The feature files are `static/js/camera.js`, `face_emotion.py`, `app.py`, `templates/facial_expression.html`, `templates/base.html`, and `static/css/expression-colors.css`.
+
+## Password-reset email on Render
+
+Render Free blocks outbound SMTP connections, so password-reset OTP delivery uses the **Resend HTTPS API** instead of Gmail SMTP. The existing flow is unchanged: **Forgot Password → Send OTP → Verify OTP → Reset Password**.
+
+Create a Resend account, create an API key, and configure the sender address in the Resend dashboard. For local development, put the following values in `.env` or export them in PowerShell. For Render, add the same values under **Dashboard → Service → Environment → Environment Variables**:
+
+```
+RESEND_API_KEY=re_your_resend_api_key
+RESEND_FROM_EMAIL=MindPulse AI <onboarding@resend.dev>
+```
+
+For production, verify your own domain with Resend and use a sender such as:
+
+```
+RESEND_FROM_EMAIL=MindPulse AI <noreply@yourdomain.com>
+```
+
+The sender implementation is in `email_service.py` and uses Python's built-in HTTPS client, so no additional package is required. The old SMTP variables are no longer read and can be removed:
+
+```
+SMTP_HOST
+SMTP_PORT
+SMTP_USERNAME
+SMTP_APP_PASSWORD
+SMTP_FROM_EMAIL
+```
+
+Never commit `.env`, API keys, or app passwords to GitHub. If the Resend API is unavailable or incorrectly configured, the application returns a clear email-delivery error and does not silently mark the OTP as sent.
+
+## OpenCV compatibility for Facial Expression Analysis
+
+The facial-expression feature requires the OpenCV 4.x Haar Cascade API. The project pins the dependency in `requirements.txt` as:
+
+```
+opencv-python-headless>=4.8,<5
+```
+
+OpenCV 5 may not expose `cv2.CascadeClassifier`, which causes facial analysis to fail. For local development, using the project virtual environment is recommended:
+
+```
+cd "C:\Users\tejas\Downloads\MindPulse-AI-Flask\Mental-Wellbeing-Predictor"
+..\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade "opencv-python-headless>=4.8,<5"
+python -c "import cv2; print(cv2.__version__); print(hasattr(cv2, 'CascadeClassifier'))"
+python app.py
+```
+
+The verification command should print an OpenCV 4.x version and `True`. A virtual environment is not required by Flask, but it prevents this project’s dependencies from conflicting with other Python projects. Render creates its own environment automatically; commit and push the updated `requirements.txt`, then redeploy. If Render retains OpenCV 5 in its build cache, use **Manual Deploy → Clear build cache & deploy**.
