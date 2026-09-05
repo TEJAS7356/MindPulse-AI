@@ -1,0 +1,6 @@
+.env
+wellbeing.db
+__pycache__/
+*.pyc
+.venv/
+.streamlit/secrets.toml

@@ -1,0 +1,1 @@
+.toolkit-grid{grid-template-columns:repeat(3,1fr)}.toolkit-grid .feature-card{min-height:190px}.toolkit-grid .feature-card h3{font-size:16px}.toolkit-grid .feature-card p{margin-bottom:0}@media(max-width:850px){.toolkit-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:500px){.toolkit-grid{grid-template-columns:1fr}}
