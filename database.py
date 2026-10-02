@@ -74,3 +74,30 @@ def delete_checkin(uid,cid):
 def ensure_extra_tables():
  with conn() as c:c.execute('CREATE TABLE IF NOT EXISTS goals(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,title TEXT NOT NULL,target INTEGER NOT NULL,unit TEXT NOT NULL,progress INTEGER DEFAULT 0,created_at TEXT NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)')
 ensure_extra_tables()
+
+
+def get_export_data(uid):
+    """Return user-facing account data without credentials or internal IDs."""
+    with conn() as c:
+        profile = c.execute('SELECT name,email,created_at FROM users WHERE id=?', (uid,)).fetchone()
+        if not profile:
+            return None
+        result = {'profile': dict(profile)}
+        for key, table, order in (
+            ('predictions', 'predictions', 'timestamp'),
+            ('journals', 'journals', 'created_at'),
+            ('checkins', 'checkins', 'created_at'),
+            ('habits', 'habits', 'habit_date'),
+            ('goals', 'goals', 'created_at'),
+        ):
+            rows = c.execute(f'SELECT * FROM {table} WHERE user_id=? ORDER BY {order}', (uid,)).fetchall()
+            result[key] = [dict(row) for row in rows]
+        return result
+
+
+def delete_account(uid):
+    """Delete the account and every current user-owned record in the SQLite database."""
+    with conn() as c:
+        for table in ('password_resets', 'predictions', 'journals', 'checkins', 'habits', 'goals'):
+            c.execute(f'DELETE FROM {table} WHERE user_id=?', (uid,))
+        c.execute('DELETE FROM users WHERE id=?', (uid,))

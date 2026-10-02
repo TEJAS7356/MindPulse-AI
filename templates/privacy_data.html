@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Privacy & Data · MindPulse AI{% endblock %}
+{% block content %}
+<section class="narrow-page privacy-page">
+  <span class="kicker">YOUR ACCOUNT CONTROLS</span>
+  <h1>Privacy &amp; data</h1>
+  <p class="lead">Download a copy of the information in your MindPulse account, or permanently delete your account and its app-database records.</p>
+
+  <section class="form-card privacy-card">
+    <span class="kicker">DOWNLOAD A COPY</span>
+    <h2>Export my data</h2>
+    <p>Your export includes your profile and saved assessments, journal entries, mood check-ins, habits, and goals. It does not include your password.</p>
+    <div class="data-counts" aria-label="Number of saved records">
+      <span><b>{{ record_counts.predictions }}</b> assessments</span>
+      <span><b>{{ record_counts.journals }}</b> journal entries</span>
+      <span><b>{{ record_counts.checkins }}</b> check-ins</span>
+      <span><b>{{ record_counts.habits }}</b> habit records</span>
+      <span><b>{{ record_counts.goals }}</b> goals</span>
+    </div>
+    <div class="privacy-actions" aria-label="Choose an export format">
+      <a class="btn primary" href="{{ url_for('export_my_data', file_format='csv') }}">Download CSV</a>
+      <a class="btn outline" href="{{ url_for('export_my_data', file_format='pdf') }}">Download PDF</a>
+      <a class="btn outline" href="{{ url_for('export_my_data', file_format='docx') }}">Download Word (.docx)</a>
+    </div>
+    <p class="muted small">Exports contain private wellbeing information. Store them somewhere secure.</p>
+  </section>
+
+  <section class="form-card privacy-card danger-card">
+    <span class="kicker">PERMANENT ACTION</span>
+    <h2>Delete my account and data</h2>
+    <p>This permanently removes your MindPulse account and its saved app-database records, including assessments, journals, check-ins, habits, and goals. You will be signed out and will not be able to recover them here.</p>
+    <p class="muted small">This does not remove copies you downloaded or records held separately by hosting or service providers.</p>
+    <form method="post" class="delete-account-form" onsubmit="return confirm('Permanently delete your MindPulse account and saved app data? This cannot be undone.');">
+      <input type="hidden" name="action" value="delete_account">
+      <label for="delete-password">Confirm your current password</label>
+      <input id="delete-password" name="password" type="password" autocomplete="current-password" required>
+      <label for="delete-confirm">Type <strong>DELETE</strong> to confirm</label>
+      <input id="delete-confirm" name="confirm_text" type="text" autocomplete="off" required pattern="DELETE" title="Type DELETE in capital letters">
+      <button class="btn danger-button" type="submit">Delete my account and data</button>
+    </form>
+  </section>
+</section>
+{% endblock %}

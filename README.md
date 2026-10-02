@@ -89,7 +89,8 @@ SMTP_PORT=587
 SMTP_USERNAME=yourgmail@gmail.com
 SMTP_APP_PASSWORD=your-gmail-app-password
 SMTP_FROM_EMAIL=yourgmail@gmail.com
-ADMIN_EMAIL=optional-admin-email
+ADMIN_EMAILS=first-admin@example.com,second-admin@example.com
+# ADMIN_EMAIL=legacy-single-admin@example.com (still supported)
 ```
 
 The Flask app reads environment variables directly. Gmail requires a Google App Password, not your normal Gmail password.
@@ -142,7 +143,7 @@ Possible future work includes a managed database, a validated consented wellbein
 
 ## Additional wellbeing suite
 
-The authenticated product sidebar now exposes the complete extended feature set: downloadable personal HTML reports, Explainable AI, profile and settings, private journaling, daily mood check-ins, habit tracking, guided breathing, personalized weekly goals, protected admin analytics, and dataset-range outlier warnings. All personal records use `user_id` isolation in SQLite. Admin analytics requires the signed-in email to match the `ADMIN_EMAIL` environment variable.
+The authenticated product sidebar now exposes the complete extended feature set: downloadable personal HTML reports, Explainable AI, profile and settings, private journaling, daily mood check-ins, habit tracking, guided breathing, personalized weekly goals, protected admin analytics, and dataset-range outlier warnings. All personal records use `user_id` isolation in SQLite. Admin analytics grants access to email addresses listed in comma-separated `ADMIN_EMAILS`; the older single `ADMIN_EMAIL` variable remains supported. Configure the emails in the deployment environment, not in source code.
 
 The report download is intentionally HTML so it remains dependency-light and printable from any browser. Use the browser’s Print command to save it as PDF.
 
@@ -152,11 +153,11 @@ The companion uses the current `google-genai` SDK with a fresh client for each r
 
 ## Facial Expression Analysis
 
-The Facial Expression Analysis page uses the browser camera only after the user clicks **Enable camera** and grants permission. The browser captures a frame every 1.5 seconds and sends it to the authenticated Flask endpoint `/api/analyze-face`. The backend uses the existing OpenCV Haar cascade implementation in `face_emotion.py` to detect a visible face and return one of six educational expression labels: **Happy, Neutral, Sad, Angry, Surprised, or Fearful**, together with a confidence value and supportive message.
+The Facial Expression Analysis page uses the browser camera only after the user clicks **Enable camera** and grants permission. The browser captures a frame every 1.5 seconds and sends it to the authenticated Flask endpoint `/api/analyze-face`. The backend uses the existing OpenCV Haar cascade implementation in `face_emotion.py` to detect a visible face and return one of six educational expression labels: **Happy, Neutral, Sad, Angry, Surprised, or Fearful**, together with a heuristic score and supportive message. The feature is labeled experimental in the interface.
 
 The feature describes visible facial expression only. It is **not a mental-health diagnosis**, and expressions such as Sad are not converted into wellbeing risk. If no face is visible, the interface shows **No face detected**. On Render, use the HTTPS deployment URL because browsers require a secure context for camera access.
 
-The feature files are `static/js/camera.js`, `face_emotion.py`, `app.py`, `templates/facial_expression.html`, `templates/base.html`, and `static/css/expression-colors.css`.
+The feature files are `static/js/camera.js`, `face_emotion.py`, `app.py`, `templates/facial_expression.html`, `templates/base.html`, and `static/css/expressions-colors.css`.
 
 ## Password-reset email on Render
 
@@ -206,3 +207,13 @@ python app.py
 ```
 
 The verification command should print an OpenCV 4.x version and `True`. A virtual environment is not required by Flask, but it prevents this project’s dependencies from conflicting with other Python projects. Render creates its own environment automatically; commit and push the updated `requirements.txt`, then redeploy. If Render retains OpenCV 5 in its build cache, use **Manual Deploy → Clear build cache & deploy**.
+
+## Privacy, exports, and student support
+
+The authenticated **Privacy & Data** page (`/privacy-data`) provides downloads of a user's profile and saved assessments, journal entries, mood check-ins, habits, and goals in CSV, PDF, or Word (`.docx`) format. Password hashes and internal record IDs are excluded. Export generation uses `reportlab` and `python-docx`, included in the requirements files.
+
+The same page provides account deletion protected by the current password and a typed `DELETE` confirmation. It removes the account and its linked records from the MindPulse SQLite database. It cannot remove files users previously downloaded or copies held separately by hosting/service providers.
+
+The public India-wide **Student Support** page (`/student-support`) links to official Government of India information for nearby district/community mental-health services, lists Tele-MANAS numbers **14416** and **1-800-891-4416**, and identifies **112** for emergencies. These resources are independent of assessment results. The numbers and links should be checked against official sources periodically.
+
+The existing ML Concepts page is now **Model & Limitations**. It describes the 180-tree Random Forest, preprocessing, input fields, synthetic label creation, held-out evaluation, and why its probabilities are not validated confidence or clinical evidence. The face-analysis page and navigation label mark that feature **Experimental** and state that it is separate from wellbeing predictions.

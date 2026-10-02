@@ -1,10 +1,13 @@
 import os
+import mimetypes
 from functools import wraps
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import pandas as pd
 import database, auth, model, ai_service, email_service, face_emotion
+import data_export
 
+mimetypes.add_type('text/css', '.css')
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-only-change-me')
 app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024
@@ -38,6 +41,11 @@ def prediction_payload(values):
     return {'risk':risk,'probability':probability,'probabilities':probabilities,'factors':factors,'recommendations':__import__('utils').recommendations(values),'outliers':model.outliers(values),'values':values}
 
 def context(**extra): return {'user': current_user(), 'theme': session.get('theme','light'), **extra}
+
+def is_admin_email(email):
+    configured = (os.getenv('ADMIN_EMAILS', '') + ',' + os.getenv('ADMIN_EMAIL', '')).split(',')
+    allowed = {address.strip().casefold() for address in configured if address.strip()}
+    return bool(email) and email.strip().casefold() in allowed
 
 @app.context_processor
 def inject_globals(): return {'logged_in': bool(current_user()), 'app_name':'MindPulse AI'}
@@ -164,6 +172,9 @@ def ai_companion():
 @app.route('/about')
 def about(): return render_template('about.html', **context())
 
+@app.route('/student-support')
+def student_support(): return render_template('student_support.html', **context())
+
 @app.route('/report')
 @login_required
 def report():
@@ -190,6 +201,44 @@ def profile():
         else: flash('Please enter a name.','error')
         return redirect(url_for('profile'))
     return render_template('profile.html', **context())
+
+@app.route('/privacy-data', methods=['GET', 'POST'])
+@login_required
+def privacy_data():
+    uid = session['user_id']
+    if request.method == 'POST':
+        if request.form.get('action') != 'delete_account':
+            flash('That action is not available.', 'error')
+            return redirect(url_for('privacy_data'))
+        user = database.get_user_by_id(uid)
+        if not user or not auth.verify_password(request.form.get('password', ''), user['password_hash']):
+            flash('Password was not correct. Your account has not been deleted.', 'error')
+            return redirect(url_for('privacy_data'))
+        if request.form.get('confirm_text', '').strip() != 'DELETE':
+            flash('Type DELETE exactly to confirm account deletion.', 'error')
+            return redirect(url_for('privacy_data'))
+        database.delete_account(uid)
+        session.clear()
+        flash('Your MindPulse account and app-database records have been deleted.', 'success')
+        return redirect(url_for('index'))
+    data = database.get_export_data(uid) or {}
+    counts = {key: len(data.get(key, [])) for key in ('predictions', 'journals', 'checkins', 'habits', 'goals')}
+    return render_template('privacy_data.html', **context(record_counts=counts))
+
+@app.route('/privacy-data/export/<file_format>')
+@login_required
+def export_my_data(file_format):
+    if file_format not in {'csv', 'pdf', 'docx'}:
+        return 'Unsupported export format', 404
+    data = database.get_export_data(session['user_id'])
+    if not data:
+        return 'Account data not found', 404
+    content, mimetype, filename = data_export.build_export(data, file_format)
+    from io import BytesIO
+    from flask import send_file
+    response = send_file(BytesIO(content), mimetype=mimetype, as_attachment=True, download_name=filename, max_age=0)
+    response.headers['Cache-Control'] = 'private, no-store'
+    return response
 
 @app.route('/journal', methods=['GET','POST'])
 @login_required
@@ -232,7 +281,7 @@ def goal_progress(goal_id): database.update_goal(session['user_id'],goal_id,int(
 @app.route('/admin-analytics')
 @login_required
 def admin_analytics():
-    if current_user()['email'].lower()!=os.getenv('ADMIN_EMAIL','').lower(): return render_template('about.html', **context(),),403
+    if not is_admin_email(current_user()['email']): return render_template('about.html', **context(),),403
     rows=[dict(x) for x in database.get_all_predictions()]
     return render_template('admin_analytics.html', **context(rows=rows, users=len({r['user_id'] for r in rows})))
 @app.route('/theme', methods=['POST'])

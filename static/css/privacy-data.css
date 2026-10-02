@@ -1,0 +1,24 @@
+.privacy-page .privacy-card{margin:1.4rem 0;padding:clamp(1.2rem,3vw,2rem)}
+.privacy-page h2,.support-card h2,.urgent-support h2{margin:.35rem 0 .75rem}
+.data-counts{display:flex;flex-wrap:wrap;gap:.55rem;margin:1rem 0 1.25rem}
+.data-counts span{padding:.55rem .75rem;border:1px solid var(--border,#dfe4ee);border-radius:999px;background:var(--surface,#fff);font-size:.9rem}
+.data-counts b{margin-right:.25rem}
+.privacy-actions{display:flex;flex-wrap:wrap;gap:.65rem;margin:1rem 0}
+.danger-card{border:1px solid #e9b6b6}
+.delete-account-form{display:grid;gap:.65rem;max-width:34rem;margin-top:1.1rem}
+.delete-account-form input{width:100%;padding:.75rem;border:1px solid var(--border,#dfe4ee);border-radius:.65rem;background:var(--surface,#fff);color:inherit}
+.danger-button{justify-self:start;background:#a92032;color:#fff;border:0;margin-top:.35rem}
+.experimental-label{display:inline-flex;padding:.35rem .65rem;border-radius:999px;background:#fff1d6;color:#7b4b00;font-weight:700}
+.experimental-notice{border-left:4px solid #d28a16}
+.support-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,19rem),1fr));gap:1rem;margin:1.25rem 0}
+.support-card{height:100%}
+.support-number,.urgent-number{display:block;font-size:1.3rem;font-weight:750;margin:.65rem 0;color:var(--accent,#2946a3);text-decoration:underline;text-underline-offset:3px}
+.secondary-number{font-size:1.08rem}
+.urgent-support{margin:1rem 0;padding:clamp(1.2rem,3vw,2rem);border:1px solid #e7a6a6;border-left:5px solid #b42332;border-radius:1rem;background:#fff7f7}
+.urgent-support .urgent-number{font-size:1.65rem;color:#a01826}
+.resource-check{margin:1rem 0 2rem}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:.65rem;margin:1rem 0}
+.metric-grid>div{padding:.75rem;border:1px solid var(--border,#dfe4ee);border-radius:.7rem;display:grid;gap:.2rem}
+.metric-grid b{font-size:1.15rem}
+.metric-grid span{font-size:.85rem;color:var(--muted,#667085)}
+@media(max-width:600px){.privacy-actions .btn{width:100%;text-align:center}.data-counts span{font-size:.82rem}.delete-account-form .danger-button{width:100%}}
